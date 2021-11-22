@@ -1,11 +1,12 @@
 import os
 import argparse
+import numpy as np
 from .utils.preprocess import make_dirs, raw_data_parsing
 from .utils.features import create_ifeatpro_features, create_pssm_profiles, create_pssmpro_features, create_kernel_features
-from .utils.helper import get_te, store_object_validation_preds, get_n_te
+from .utils.helper import get_te, get_n_model_stats
 
 
-def main(root_dir, train_file, test_file, base_algo, k_best_models, n_sim, debug=True):
+def main(root_dir, train_file, test_file, base_algo, k_best_models, n_sim, store, debug=True):
     # make the appropriate directory structure for proper EnZymClass functioning
     make_dirs(root_dir)
     # preprocess the raw data files provided in csv format
@@ -39,18 +40,20 @@ def main(root_dir, train_file, test_file, base_algo, k_best_models, n_sim, debug
                          kernel_enz_test_output]
 
     # run enzymclass validation N times to give the user an idea of it's performance
-    te_objs = get_n_te(enz_train_csv, enz_train_labels, train_feature_dirs, None, base_algo, k_best_models, None, n_sim)
+    # TODO: if store, store model results in validation directory
+    precision, recall, accuracy = get_n_model_stats(root_dir, enz_train_csv, enz_train_labels, train_feature_dirs,
+                                                    None, base_algo, k_best_models, False, n_sim, store)
 
-    for te in te_objs:
-        # TODO: if store argument is true run the following
-        store_object_validation_preds(te, root_dir)
-        # TODO: Create and print a table of enzymclass model precision recall accuracy; min max mean median
+    # TODO: create ensemble model statistics
+    print("|----------------|-------------|--------------|")
+    print("| Mean Precision | Mean Recall | Mean Accuracy |")
+    print(f"|******{round(np.mean(precision), 2)}******|*****{round(np.mean(recall), 2)}*****|*****{round(np.mean(accuracy), 2)}*****|")
+    print("|----------------|-------------|--------------|")
 
     # predict using enzymclass
     # te_pred = get_te(enz_train_csv, enz_test_csv, enz_train_labels, train_feature_dirs, test_feature_dirs,
     #                  None, "SVM", 5, False, 0)
-    # print(te_pred.precision, te_pred.recall)
-    # TODO:  store the predictions in predictions directory
+    # TODO:  store the predictions in predictions/ directory
     return
 
 
@@ -64,6 +67,9 @@ if __name__ == "__main__":
     parser.add_argument("--nsim", "-n", type=int, default=1000, help="number of simulations for validation")
     parser.add_argument("--nmod", "-k", type=int, default=5, help="number of base models for meta learner prediction")
 
+    parser.add_argument("--store", "-s", help="Will store validation predictions of each base model if called",
+                        action="store_true")
+
     args = parser.parse_args()
 
-    main(args.root_dir, args.train_file, args.test_file, args.base, args.nmod, args.nsim)
+    main(args.root_dir, args.train_file, args.test_file, args.base, args.nmod, args.nsim, args.store)

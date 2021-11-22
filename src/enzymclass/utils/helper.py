@@ -25,43 +25,63 @@ def get_te(train_enz_seq_file, test_enz_seq_file, label_file,
     return te
 
 
-def get_n_te(train_enz_seq_file, label_file, train_feat_dirs,
-             hyper_param_file, base_algo, k, opt, n):
-
-    iter_svm = zip([train_enz_seq_file for _ in range(n)],
-                   [None for _ in range(n)],
-                   [label_file for _ in range(n)],
-                   [train_feat_dirs for _ in range(n)],
-                   [None for _ in range(n)],
-                   [hyper_param_file for _ in range(n)],
-                   [base_algo for _ in range(n)],
-                   [k for _ in range(n)],
-                   [opt for _ in range(n)],
-                   range(n))
-
-    pool = mp.Pool(mp.cpu_count())
-    te_objs = list(pool.starmap(get_te, iter_svm))
-    return te_objs
-
-
-def store_object_validation_preds(te_obj, root_dir):
+def store_object_validation_preds(te_obj, root_dir, rs):
     validation_storage_dir = os.path.join(root_dir, "validation")
 
     for featname, featobj in zip(te_obj.feat_names, te_obj.objects):
-        feat_file = os.path.join(validation_storage_dir, f"{featname}.csv")
-        write_mode = "a" if os.path.exists(feat_file) else "w"
-        with open(feat_file, write_mode) as f:
+        feat_storage_dir = os.path.join(validation_storage_dir, featname)
+        os.makedirs(feat_storage_dir, exist_ok=True)
+        feat_file = os.path.join(feat_storage_dir, f"pred_{rs}.csv")
+        with open(feat_file, "w") as f:
             f.write(",".join(list(map(str, featobj.yvalid))))
             f.write("\n")
             f.write(",".join(list(map(str, featobj.ypredvalid))))
             f.write("\n")
 
-    ensemble_file = os.path.join(validation_storage_dir, "ensemble.csv")
-    write_mode = "a" if os.path.exists(ensemble_file) else "w"
-    with open(ensemble_file, write_mode) as f:
+    ensemble_storage_dir = os.path.join(validation_storage_dir, "ensemble")
+    os.makedirs(ensemble_storage_dir, exist_ok=True)
+    ensemble_file = os.path.join(ensemble_storage_dir, f"pred_{rs}.csv")
+    with open(ensemble_file, "w") as f:
         f.write(",".join(list(map(str, te_obj.en.ytest))))
         f.write("\n")
         f.write(",".join(list(map(str, te_obj.en.preds))))
         f.write("\n")
 
     return
+
+
+def get_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
+                    hyper_param_file, base_algo, k, opt, rs, store):
+
+    # get te object
+    te_obj = get_te(train_enz_seq_file, None, label_file, train_feat_dirs, None, hyper_param_file, base_algo, k, opt, rs)
+    # store the model predictions only if store flag is true
+    if store:
+        store_object_validation_preds(te_obj, root_dir, rs)
+    # return ensemble model stats
+    return te_obj.precision, te_obj.recall, te_obj.en.acc
+
+
+def get_n_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
+                      hyper_param_file, base_algo, k, opt, n, store):
+
+    iter_svm = zip([root_dir for _ in range(n)],
+                   [train_enz_seq_file for _ in range(n)],
+                   [label_file for _ in range(n)],
+                   [train_feat_dirs for _ in range(n)],
+                   [hyper_param_file for _ in range(n)],
+                   [base_algo for _ in range(n)],
+                   [k for _ in range(n)],
+                   [opt for _ in range(n)],
+                   range(n),
+                   [store for _ in range(n)])
+
+    pool = mp.Pool(mp.cpu_count() - 1)
+    metrics = pool.starmap(get_model_stats, iter_svm)
+    precision = [m[0] for m in metrics]
+    recall = [m[1] for m in metrics]
+    accuracy = [m[2] for m in metrics]
+    return precision, recall, accuracy
+
+
+
