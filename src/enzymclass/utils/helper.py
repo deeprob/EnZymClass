@@ -1,11 +1,11 @@
 import os
 import multiprocessing as mp
-from ..model.classifier import TEClassification
+from model.classifier import TEClassification
 
 
 def get_te(train_enz_seq_file, test_enz_seq_file, label_file,
            train_feat_dirs, test_feat_dirs,
-           hyper_param_file, base_algo, k, opt, rs):
+           hyper_param_file, base_algo, k, opt, rs, mvp):
     """
     The function to get enzymclass classification object
     :param train_enz_seq_file:
@@ -20,8 +20,11 @@ def get_te(train_enz_seq_file, test_enz_seq_file, label_file,
     :param rs: random seed
     :return:
     """
-    te = TEClassification(train_enz_seq_file, test_enz_seq_file, label_file, train_feat_dirs, test_feat_dirs,
-                          hyper_param_file=hyper_param_file, random_seed=rs, n_models=k, model=base_algo, optimize=opt)
+    te = TEClassification(
+        train_enz_seq_file, test_enz_seq_file, label_file, train_feat_dirs, test_feat_dirs,
+        hyper_param_file=hyper_param_file, random_seed=rs, n_models=k, model=base_algo, 
+        optimize=opt, mvp=mvp
+        )
     return te
 
 
@@ -51,10 +54,13 @@ def store_object_validation_preds(te_obj, root_dir, rs):
 
 
 def get_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
-                    hyper_param_file, base_algo, k, opt, rs, store):
+                    hyper_param_file, base_algo, k, opt, rs, store, mvp):
 
     # get te object
-    te_obj = get_te(train_enz_seq_file, None, label_file, train_feat_dirs, None, hyper_param_file, base_algo, k, opt, rs)
+    te_obj = get_te(
+        train_enz_seq_file, None, label_file, train_feat_dirs, None, 
+        hyper_param_file, base_algo, k, opt, rs, mvp
+        )
     # store the model predictions only if store flag is true
     if store:
         store_object_validation_preds(te_obj, root_dir, rs)
@@ -63,7 +69,7 @@ def get_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
 
 
 def get_n_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
-                      hyper_param_file, base_algo, k, opt, n, store):
+                      hyper_param_file, base_algo, k, opt, n, store, mvp, threads):
 
     iter_svm = zip([root_dir for _ in range(n)],
                    [train_enz_seq_file for _ in range(n)],
@@ -74,14 +80,24 @@ def get_n_model_stats(root_dir, train_enz_seq_file, label_file, train_feat_dirs,
                    [k for _ in range(n)],
                    [opt for _ in range(n)],
                    range(n),
-                   [store for _ in range(n)])
+                   [store for _ in range(n)],
+                   [mvp for _ in range(n)])
 
-    pool = mp.Pool(mp.cpu_count() - 1)
+    cores = mp.cpu_count() if threads==-1 else threads
+    pool = mp.Pool(cores)
     metrics = pool.starmap(get_model_stats, iter_svm)
+    pool.close()
+    pool.join()
+
     precision = [m[0] for m in metrics]
     recall = [m[1] for m in metrics]
     accuracy = [m[2] for m in metrics]
     return precision, recall, accuracy
 
 
-
+def store_enzymclass_test_preds(test_filename, test_enznames, test_enzpreds):
+    assert len(test_enznames) == len(test_enzpreds)
+    with open(test_filename, "w") as f:
+        for ename, epred in zip(test_enznames, test_enzpreds):
+            f.write(f"{ename},{epred}\n")
+    return

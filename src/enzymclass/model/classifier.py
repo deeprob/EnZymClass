@@ -6,8 +6,8 @@ import pandas as pd
 from sklearn.metrics import precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
-from .meta import Ensemble
-from .base import SVM, GBC, NN
+from model.meta import Ensemble
+from model.base import SVM, GBC, NN
 from ngrampro import NGModel, GAANGModel
 
 
@@ -88,7 +88,7 @@ class TEClassification(Base):
 
     def __init__(self, train_enz_seq, test_enz_seq, label_file, train_feature_dirs, test_feature_dirs, use_feat=None,
                  hyper_param_file=None, model='SVM', random_seed=None, pca_components=55, n_models=5,
-                 validation_fraction=0.25, optimize=False):
+                 validation_fraction=0.25, optimize=False, mvp=None):
 
         self.random_seed = random_seed
         self.model = model
@@ -97,6 +97,7 @@ class TEClassification(Base):
         self.validation_fraction = validation_fraction
         self.optimize = optimize
         self.test = True if test_feature_dirs is not None else False
+        self.mvp = mvp
 
         # initialize super class
         if self.model == 'SVM':
@@ -217,14 +218,12 @@ class TEClassification(Base):
             self.all_model_preds = [o.ypredvalid for o in self.objects]
             self.best_model_preds = [o.ypredvalid for o in self.best_models]
             self.en = Ensemble(self.best_model_preds, self.y_valid)
-            self.precision = precision_score(self.y_valid, self.en.preds, labels=[3], average='micro')
-            self.recall = recall_score(self.y_valid, self.en.preds, labels=[3], average='micro')
+            self.precision, self.recall = self.get_safe_precision_recall(self.y_valid, self.en.preds)
 
         else:
             self.best_model_valid_preds = [o.ypredvalid for o in self.best_models]
             self.en_valid = Ensemble(self.best_model_valid_preds, self.y_valid)
-            self.precision = precision_score(self.y_valid, self.en_valid.preds, labels=[3], average='micro')
-            self.recall = recall_score(self.y_valid, self.en_valid.preds, labels=[3], average='micro')
+            self.precision, self.recall = self.get_safe_precision_recall(self.y_valid, self.en_valid.preds)
             self.best_model_preds = [o.yhattest for o in self.best_models]
             self.en = Ensemble(self.best_model_preds)
 
@@ -475,3 +474,17 @@ class TEClassification(Base):
     def get_best_hps(self):
         hps = list(map(self.get_best_hp, self.objects))
         return list(zip(self.feat_names, hps))
+
+    def get_safe_precision_recall(self, y_true, y_preds):
+        # Check to see if it is a binary classification model
+        values, counts = np.unique(y_true, return_counts=True)
+        avg = "binary"
+        if len(values)>2:
+            avg = "weighted"
+        if self.mvp != None:
+            pr = precision_score(y_true, y_preds, labels=[self.mvp], average='micro')
+            re = recall_score(y_true, y_preds, labels=[self.mvp], average='micro')
+        else:
+            pr = precision_score(y_true, y_preds, labels=None, average=avg)
+            re = recall_score(y_true, y_preds, labels=None, average=avg)
+        return pr, re

@@ -110,8 +110,8 @@ def create_kernel_features(root_dir):
     kernel_types = ["spectrum", "mismatch", "gappy"]
     kernel_prefixes = ["spec", "mism", "gap"]
     for i, kernel in enumerate(kernel_types):
-        specific_dir = root_dir + "features/kernel/" + kernel
-        enz_train_out_prefix = root_dir + "features/kernel/train/" + kernel_prefixes[i]
-        enz_test_out_prefix = root_dir + "features/kernel/test/" + kernel_prefixes[i]
+        specific_dir = os.path.join(root_dir, "features/kernel/", kernel) # root_dir + "features/kernel/" + kernel
+        enz_train_out_prefix = os.path.join( root_dir, "features/kernel/train/", kernel_prefixes[i]) # root_dir + "features/kernel/train/" + kernel_prefixes[i]
+        enz_test_out_prefix = os.path.join(root_dir, "features/kernel/test/", kernel_prefixes[i]) # root_dir + "features/kernel/test/" + kernel_prefixes[i]
         parse_kernel_matrix(specific_dir, enz_train_out_prefix, enz_test_out_prefix)
     return

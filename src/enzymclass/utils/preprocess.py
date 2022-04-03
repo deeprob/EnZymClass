@@ -18,6 +18,7 @@ def make_dirs(root_dir):
     os.makedirs(os.path.join(root_dir, "features"), exist_ok=True)
     os.makedirs(os.path.join(root_dir, "validation"), exist_ok=True)
     os.makedirs(os.path.join(root_dir, "predictions"), exist_ok=True)
+    os.makedirs(os.path.join(root_dir, "logs"), exist_ok=True)
 
     # create ifeatpro, kernel, pssmpro dir inside features
     os.makedirs(os.path.join(root_dir, "features/ifeatpro/train"), exist_ok=True)
