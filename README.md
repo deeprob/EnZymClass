@@ -1,6 +1,4 @@
 # EnZymClass
-Please refer to the following link for now: 
-https://github.com/deeprob/ThioesteraseEnzymeSpecificity
 
 Deepro Banerjee, Michael A. Jindra, Alec J. Linot, Brian F. Pfleger, Costas D. Maranas,
 **EnZymClass: Substrate specificity prediction tool of plant acyl-ACP thioesterases based on ensemble learning**,
@@ -10,6 +8,8 @@ Volume 4,
 Pages 1-9,
 ISSN 2590-2628,
 https://doi.org/10.1016/j.crbiot.2021.12.002.
+
+**EnZymClass has been tested in macos and linux platforms.**
 
 # Usage
 ## Step 1: Environment creation
@@ -111,7 +111,7 @@ foo@bar:~$ python src/enzymclass/run_model.py /path/to/root_dir /path/to/train.c
 
 # Additional tips
 ## Downloading uniref database beforehand for faster result generation
-*EnZymClass checks if the uniref database has already been downloaded and is present in the "/path/to/root_dir/pssmpro" directory. If not present, then it will download and store the database on the said directory. Since it is a huge file, an user can download it prior to running EnZymClass and store in the directory mentioned above as uniref50.fasta. After downloading the uniref database, an user will also have to convert it to a blast compatible database using the "makeblastdb" command as mentioned below:*
+*EnZymClass checks if the uniref database has already been downloaded and is present in the "/path/to/root_dir/pssmpro" directory. If not present, then it will download and store the database on the said directory. Since it is a huge file, an user can download it prior to running EnZymClass and store in the directory mentioned above as uniref50.fasta. After downloading the uniref database, the user will also have to convert it to a blast compatible database using the "makeblastdb" command as mentioned below:*
 ```bash
 foo@bar:~$ makeblastdb -in "/path/to/root_dir/pssmpro/uniref50.fasta" -dbtype "prot" -out "/path/to/root_dir/pssmpro/uniref50"
 ```
@@ -120,10 +120,13 @@ foo@bar:~$ makeblastdb -in "/path/to/root_dir/pssmpro/uniref50.fasta" -dbtype "p
 *Users can pass the number of cores to be used by EnZymClass using the "--threads" optional argument. By default EnZymClass uses maximum available threads.*
 
 ## Reducing the number of validation simulations to run 
-*EnZymClass estimates an accurate validation performance by simulating N number of models where each model uses unique training and validation sets. By default, N=1000. To get faster results, an user can reduce the number of simulations to run by specifying a lower number through the "--nsim" optional argument. To stop EnZymClass from generating this report, "--nsim" can be set to 0.*
+*EnZymClass estimates an accurate validation performance by simulating N number of models where each model uses unique training and validation sets. By default, N=1000. To get faster results, the user can reduce the number of simulations to run by specifying a lower number through the "--nsim" optional argument. To stop EnZymClass from generating this report, "--nsim" can be set to 0.*
 
 ## Using EnZymClass to **ONLY CREATE FEATURES**.
 *To only create features and not run the prediction model, run enzymclass with the "--featurize" argument.*
+
+## Using EnZymClass to **ONLY RUN PREDICTION PIPELINE**.
+*To only run the prediction model, run enzymclass with the "--predict" argument. This assumes that the features are already stored in the /path/to/root_dir/features/ dir.*
 
 # Future Work
 1. Packaging EnZymClass.

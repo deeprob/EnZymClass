@@ -9,12 +9,12 @@ import utils.helper as uth
 
 def main(
     root_dir, train_file, test_file, base_algo, k_best_models, n_sim, store, mvp, threads, featurize_only, 
-    debug=False):
+    predict_only):
     # make the appropriate directory structure for proper EnZymClass functioning
     utp.make_dirs(root_dir)
     # log file configurations
     log_filename =  os.path.join(root_dir, "logs/enzymclass.log")
-    logging.basicConfig(filename=log_filename, format="%(asctime)s;%(levelname)s;%(message)s", encoding='utf-8', filemode="w", level=logging.DEBUG)
+    logging.basicConfig(filename=log_filename, format="%(asctime)s;%(levelname)s;%(message)s", encoding='utf-8', filemode="w", level=logging.INFO)
     # preprocess the raw data files provided in csv format
     logging.info('Preprocessing raw data files ...')
     enz_train_name_map, enz_test_name_map, enz_train_fasta, enz_test_fasta, enz_train_csv, enz_test_csv, enz_train_labels = utp.raw_data_parsing(
@@ -27,15 +27,14 @@ def main(
     kernel_enz_train_output = os.path.join(root_dir, "features/kernel/train/")
     kernel_enz_test_output = os.path.join(root_dir, "features/kernel/test/")
 
-    # create ifeatpro features
-    logging.info('Creating ifeatpro features ...')
-    if not debug:
+    if not predict_only:
+        # create ifeatpro features
+        logging.info('Creating ifeatpro features ...')
         utf.create_ifeatpro_features(enz_train_fasta, ifeat_enz_train_output, enz_test_fasta, ifeat_enz_test_output)
-    # pssmpro preprocessing
-    uniref_path = os.path.join(root_dir, "features/pssmpro/")
-    pssm_profile_train_path = os.path.join(root_dir, "features/pssmpro/pssm_profiles/train/")
-    pssm_profile_test_path = os.path.join(root_dir, "features/pssmpro/pssm_profiles/test/")
-    if not debug:
+        # pssmpro preprocessing
+        uniref_path = os.path.join(root_dir, "features/pssmpro/")
+        pssm_profile_train_path = os.path.join(root_dir, "features/pssmpro/pssm_profiles/train/")
+        pssm_profile_test_path = os.path.join(root_dir, "features/pssmpro/pssm_profiles/test/")
         logging.info('Creating pssm profiles ...')
         utf.create_pssm_profiles(uniref_path, enz_train_csv, enz_test_csv, pssm_profile_train_path, pssm_profile_test_path, nthreads=threads)
         # create pssmpro features
@@ -102,9 +101,11 @@ if __name__ == "__main__":
 
     parser.add_argument("--featurize", "-f", help="Will only create features and not run the predictive model",
                     action="store_true")
+    parser.add_argument("--predict", "-p", help="Will only run the predictive model, assumes that the features have been created and stored in appropriate dirs and subdirs",
+                    action="store_true")
     parser.add_argument("--store", "-s", help="Will store validation predictions of each base model if called",
                         action="store_true")
 
     args = parser.parse_args()
 
-    main(args.root_dir, args.train_file, args.test_file, args.base, args.nmod, args.nsim, args.store, args.iclass, args.threads, args.featurize)
+    main(args.root_dir, args.train_file, args.test_file, args.base, args.nmod, args.nsim, args.store, args.iclass, args.threads, args.featurize, args.predict)

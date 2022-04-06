@@ -273,7 +273,8 @@ class TEClassification(Base):
         featnames = [f.name.replace('.csv', '') for f in os.scandir(ifeat_traindirs) if
                      f.name.endswith('.csv')]
 
-        return featnames, ifeat_trainfiles
+        sorted_feat_and_files = sorted(zip(featnames, ifeat_trainfiles), key=lambda x: x[0])
+        return [fn[0] for fn in sorted_feat_and_files], [fn[1] for fn in sorted_feat_and_files]
 
     @staticmethod
     def get_ifeat_testfeatfiles(ifeat_testdirs):
@@ -284,7 +285,8 @@ class TEClassification(Base):
         featnames = [f.name.replace('.csv', '') for f in os.scandir(ifeat_testdirs) if
                      f.name.endswith('.csv')]
 
-        return featnames, ifeat_testfiles
+        sorted_feat_and_files = sorted(zip(featnames, ifeat_testfiles), key=lambda x: x[0])
+        return [fn[0] for fn in sorted_feat_and_files], [fn[1] for fn in sorted_feat_and_files]
 
     @staticmethod
     def get_pssm_trainfeatfiles(pssm_traindirs):
@@ -295,7 +297,8 @@ class TEClassification(Base):
         featnames = [f.name.replace('.csv', '') for f in os.scandir(pssm_traindirs) if
                      f.name.endswith('.csv')]
 
-        return featnames, pssm_trainfiles
+        sorted_feat_and_files = sorted(zip(featnames, pssm_trainfiles), key=lambda x: x[0])
+        return [fn[0] for fn in sorted_feat_and_files], [fn[1] for fn in sorted_feat_and_files]
 
     @staticmethod
     def get_pssm_testfeatfiles(pssm_testdirs):
@@ -306,7 +309,8 @@ class TEClassification(Base):
         featnames = [f.name.replace('.csv', '') for f in os.scandir(pssm_testdirs) if
                      f.name.endswith('.csv')]
 
-        return featnames, pssm_testfiles
+        sorted_feat_and_files = sorted(zip(featnames, pssm_testfiles), key=lambda x: x[0])
+        return [fn[0] for fn in sorted_feat_and_files], [fn[1] for fn in sorted_feat_and_files]
 
     def get_model_online(self, model_name, xtrain, xvalid, ytrain, yvalid, xtest=None):
 
